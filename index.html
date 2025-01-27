@@ -1,86 +1,41 @@
-<script>// Lock screen orientation to portrait
-    function lockOrientation() {
-        if (screen.orientation && screen.orientation.lock) {
-            screen.orientation
-                .lock("portrait")
-                .then(() => console.log("Screen orientation locked to portrait"))
-                .catch((err) => console.warn("Failed to lock screen orientation:", err));
-        } else {
-            console.warn("Screen orientation lock is not supported on this device.");
-        }
-    }
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity Web Player | JuicyLabs_Landiing</title>
+  </head>
+  <body style="text-align: center; padding: 0; border: 0; margin: 0;">
+    <canvas id="unity-canvas" width=1080 height=1920 tabindex="-1" style="width: 1080px; height: 1920px; background: #231F20"></canvas>
+    <script src="Build/JuicyLabs_Landing.loader.js"></script>
+    <script>
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
 
-    // Handle device motion and orientation with fallback
-    let unityInstance;
-    let isMotionSupported = false; // Flag to check if motion is supported
-    let motionDataAvailable = false; // Check if valid motion data is received
+        var canvas = document.querySelector("#unity-canvas");
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.position = "fixed";
 
-    function onUnityLoaded(instance) {
-        unityInstance = instance;
-        initializeMotionListeners();
-    }
+        document.body.style.textAlign = "left";
+      }
 
-    function initializeMotionListeners() {
-        if (window.DeviceOrientationEvent) {
-            // Check if browser supports requesting permissions for motion
-            if (typeof DeviceOrientationEvent.requestPermission === "function") {
-                // For iOS 13+ where permissions must be requested explicitly
-                DeviceOrientationEvent.requestPermission()
-                    .then((response) => {
-                        if (response === "granted") {
-                            addMotionListeners();
-                        } else {
-                            console.warn("Motion access denied by user.");
-                        }
-                    })
-                    .catch((err) => console.error("Error requesting motion permission:", err));
-            } else {
-                // For browsers that don't require explicit permission
-                addMotionListeners();
-            }
-        } else {
-            console.warn("Device motion is not supported on this device.");
-        }
-    }
-
-    function addMotionListeners() {
-        isMotionSupported = true;
-        window.addEventListener(
-            "deviceorientation",
-            (event) => {
-                if (unityInstance) {
-                    // Send orientation data to Unity
-                    if (event.beta !== null && event.gamma !== null) {
-                        motionDataAvailable = true; // Motion data is successfully received
-                        unityInstance.SendMessage(
-                            "GyroManager",
-                            "OnDeviceOrientation",
-                            JSON.stringify({
-                                alpha: event.alpha || 0, // Rotation around the z-axis
-                                beta: event.beta || 0,  // Rotation around the x-axis
-                                gamma: event.gamma || 0 // Rotation around the y-axis
-                            })
-                        );
-                    }
-                }
-            },
-            true
-        );
-
-        console.log("Motion listeners added.");
-    }
-
-    // Lock orientation and initialize motion listeners on page load
-    window.addEventListener("load", () => {
-        lockOrientation();
-
-        // Fallback: Notify Unity to keep the camera static if motion is unsupported
-        setTimeout(() => {
-            if (!isMotionSupported || !motionDataAvailable) {
-                console.log("Motion support unavailable. Keeping the camera static.");
-                if (unityInstance) {
-                    unityInstance.SendMessage("GyroManager", "DisableParallax");
-                }
-            }
-        }, 3000); // Wait 3 seconds before assuming motion is unavailable
-    });</script>
+      createUnityInstance(document.querySelector("#unity-canvas"), {
+        arguments: [],
+        dataUrl: "Build/JuicyLabs_Landing.data",
+        frameworkUrl: "Build/JuicyLabs_Landing.framework.js",
+        codeUrl: "Build/JuicyLabs_Landing.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "JuicyLabs",
+        productName: "JuicyLabs_Landiing",
+        productVersion: "0.1.0",
+        // matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
+        // devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
+      });
+    </script>
+  </body>
+</html>
